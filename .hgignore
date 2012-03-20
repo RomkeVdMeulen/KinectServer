@@ -1,0 +1,15 @@
+syntax: glob
+
+*.vcxproj*
+*.sdf
+*.suo
+*.sln
+
+CMakeCache.txt
+Makefile
+CMakeFiles
+cmake_install.cmake
+
+*.o
+*.obj
+KinectDataServer
