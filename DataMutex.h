@@ -1,10 +1,10 @@
 #pragma once
 
-#include <OpenThreads/Mutex>
+#include <OpenThreads/ReentrantMutex>
 
 namespace RuGKinectInterfaceServer {
 
-class DataMutex : public OpenThreads::Mutex
+class DataMutex : public OpenThreads::ReentrantMutex
 {
 
 public:
@@ -20,7 +20,8 @@ public:
 
 	virtual int unlock()
 	{
-		if ( OpenThreads::Mutex::unlock() != 0 ) {
+		int res = OpenThreads::Mutex::unlock();
+		if ( res < 0 ) {
 			throw EXCEPTION;
 		}
         return 0;
