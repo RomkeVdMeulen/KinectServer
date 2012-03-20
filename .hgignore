@@ -10,6 +10,7 @@ Makefile
 CMakeFiles
 cmake_install.cmake
 
-*.o
-*.obj
-KinectDataServer
+*.dir
+bin/*
+Win32
+Debug
