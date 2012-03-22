@@ -9,6 +9,7 @@
 #include "Vector3.h"
 #include <osg/Matrix>
 
+
 namespace RuGKinectInterfaceServer
 {
 
@@ -34,6 +35,7 @@ public:
 		ID_WORLD_INPUT,
 		ID_RESET_BUTTON,
 		ID_ADD_POINT_BUTTON,
+		ID_CALC_BUTTON,
 		ID_SAVE_BUTTON,
 		ID_LAST
     } MESSAGES;
@@ -43,6 +45,7 @@ public:
 	long onSliderChange(FXObject*,FXSelector,void*ptr);
 	long onAddPointClick(FXObject*,FXSelector,void*ptr);
 	long onResetClick(FXObject*,FXSelector,void*);
+	long onCalcClick(FXObject*,FXSelector,void*);
 	long onSaveClick(FXObject*,FXSelector,void*ptr);
 	long onClose(FXObject*,FXSelector,void*);
 
@@ -60,6 +63,8 @@ protected:
 	FXLabel				* m_pWorldPoints;
 	FXLabel				* m_pTransformationDescription;
 	FXLabel				* m_pSaveFeedback;
+
+	FXButton			* m_pCalcButton;
 
 	FXSlider			* m_pFieldX;
 	FXSlider			* m_pFieldY;

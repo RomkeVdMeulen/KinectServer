@@ -2,16 +2,23 @@
 
 #ifdef WIN32
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+
+//#include <pcl/point_cloud.h>
+//#include <pcl/impl/point_types.hpp>
+//#include <pcl/registration/transformation_estimation_svd.h>
+
 #include "CalibrationWindow.h"
 #include "Server.h"
 #include "KinectConnector.h"
 #include "Skeleton.h"
+
 #include <sstream>
 #include <fstream>
 #include <iomanip>
 
 using namespace RuGKinectInterfaceServer;
-using namespace std;
 
 CalibrationWindow::CalibrationWindow()
 : FXMainWindow(), m_bOpen( false ), m_uSelectedX( 0 ), m_uSelectedY( 0 ), m_mxTransformation( 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 )
@@ -78,6 +85,8 @@ CalibrationWindow::CalibrationWindow(FXApp* a, string const &filename)
 	m_pWorldPoints  = new FXLabel(pPointsLists,"");
 
 	new FXButton(pPointsFrame,"Reset",0,this,ID_RESET_BUTTON,BUTTON_NORMAL,0,0);
+	m_pCalcButton = new FXButton(pPointsFrame,"Bereken",0,this,ID_CALC_BUTTON,BUTTON_NORMAL,0,0);
+	m_pCalcButton->disable();
 
 	new FXLabel(pMatrixFrame,"Transformatie");
 	m_pTransformationDescription = new FXLabel(pMatrixFrame,"");
@@ -96,7 +105,7 @@ void CalibrationWindow::create()
 	m_pFieldX->create();
 	m_pFieldY->create();
 
-	cout << " * Opening calibration window\n";
+	std::cout << " * Opening calibration window\n";
 
 	show(PLACEMENT_SCREEN);
 
@@ -170,9 +179,6 @@ void CalibrationWindow::resetPixelInfo()
 
 long CalibrationWindow::onAddPointClick(FXObject*,FXSelector,void*ptr)
 {
-	if ( m_vPoints.size() > 3 )
-		return 0;
-	
 	Vector3 cameraPosition(
 		fxStringToFloat(m_pCameraX->getText()),
 		fxStringToFloat(m_pCameraY->getText()),
@@ -185,7 +191,8 @@ long CalibrationWindow::onAddPointClick(FXObject*,FXSelector,void*ptr)
 	);
 	m_vPoints.push_back(pair<Vector3,Vector3>(cameraPosition,worldPosition));
 
-	recalcTransformation();
+	if ( m_vPoints.size() > 3)
+		m_pCalcButton->enable();
 
 	updateStatusInfo();
 	
@@ -197,28 +204,73 @@ void CalibrationWindow::recalcTransformation()
 	if ( m_vPoints.size() < 4 )
 		return;
 
-	float camera[16];
-	float world[16];
+	ostringstream feedback;
+	feedback << "Matrix berekenen met " << m_vPoints.size() << " punten...";
+	m_pSaveFeedback->setText(feedback.str().c_str());
+
+#ifdef USE_OPENCV
+	cv::Mat camera(1, m_vPoints.size(), CV_32FC3);
+    cv::Mat  world(1, m_vPoints.size(), CV_32FC3);
+
+	for ( unsigned i = 0; i < m_vPoints.size(); ++i )
+	{
+		Vector3 cameraVector = m_vPoints[i].first;
+		Vector3 worldVector  = m_vPoints[i].second;
+
+		camera.at<cv::Point3f>(i) = cv::Point3f(cameraVector.x(), cameraVector.y(), cameraVector.z());
+		world.at<cv::Point3f>(i)  = cv::Point3f(worldVector.x(), worldVector.y(), worldVector.z());
+	}
+   
+    cv::Mat estimate;
+    std::vector<uchar> outliers;
+	try {
+		cout << " * Estimating transform from " << m_vPoints.size() << " points...\n";
+
+		int res = estimateAffine3D(camera, world, estimate, outliers);
+
+		cout << " * Estimated new transform with " << outliers.size() << " outliers.\n";
+
+		m_mxTransformation.makeIdentity();
+		for ( unsigned x = 0; x < 4; ++x )
+			for ( unsigned y = 0; y < 3; ++y )
+				m_mxTransformation(x,y) = estimate.at<double>(y,x);
+
+	} catch ( cv::Exception &exception ) {
+		cerr << "\n### Error while trying to estimate transform: " << exception.msg << " ###\n";
+	}
+#else
+	float camera[4][4];
+	float world[4][4];
 	for ( unsigned i = 0; i < 4; ++i )
 	{
 		Vector3 cameraVector = m_vPoints[i].first;
 		Vector3 worldVector  = m_vPoints[i].second;
 
-		camera[i * 4 + 0] = cameraVector.x();
-		camera[i * 4 + 1] = cameraVector.y();
-		camera[i * 4 + 2] = cameraVector.z();
-		camera[i * 4 + 3] = 1;
+		camera[i][0] = cameraVector.x();
+		camera[i][1] = cameraVector.y();
+		camera[i][2] = cameraVector.z();
 
-		world[i * 4 + 0] = worldVector.x();
-		world[i * 4 + 1] = worldVector.y();
-		world[i * 4 + 2] = worldVector.z();
-		world[i * 4 + 3] = 1;
+		world[i][0] = worldVector.x();
+		world[i][1] = worldVector.y();
+		world[i][2] = worldVector.z();
 	}
-	
-	osg::Matrix C(camera);
-	osg::Matrix W(world);
+
+	osg::Matrix C((float *) camera);
+	osg::Matrix W((float *) world);
 	
 	m_mxTransformation = C.inverse(C) * W;
+	m_mxTransformation(0,3) = m_mxTransformation(1,3) = m_mxTransformation(2,3) = 0;
+#endif
+
+	// Uses the PCL library
+	/*
+	pcl::PointCloud<pcl::PointXYZ> camera;
+	pcl::PointCloud<pcl::PointXYZ> world;
+	...
+	pcl::registration::TransformationEstimationSVD<pcl::PointXYZ,pcl::PointXYZ>;
+	*/
+
+	return;
 }
 
 void CalibrationWindow::updateStatusInfo()
@@ -262,6 +314,15 @@ long CalibrationWindow::onResetClick(FXObject*,FXSelector,void*)
 {
 	m_mxTransformation.makeIdentity();
 	m_vPoints.clear();
+
+	updateStatusInfo();
+
+	return 0;
+}
+
+long CalibrationWindow::onCalcClick(FXObject*,FXSelector,void*)
+{
+	recalcTransformation();
 
 	updateStatusInfo();
 
@@ -318,7 +379,10 @@ void CalibrationWindow::repaintDepthCavas()
 				// Depth pixel map: 2 bytes to the pixel
 				byte grayvalue = KinectConnector::depthPixelToGrayscale(reinterpret_cast<USHORT *>(LockedRect.pBits + (2 * i)));
 				if ( grayvalue < 255 )
+				{
+					grayvalue = min(255,grayvalue + 10);
 					colormap[i] = FXRGB(grayvalue,grayvalue,grayvalue);
+				}
 				else
 					colormap[i] = FXRGB(255,240,240);
 			}
@@ -435,6 +499,7 @@ FXDEFMAP(CalibrationWindow) CalibrationWindowMap[]={
 	FXMAPFUNC(SEL_CHANGED,			 CalibrationWindow::ID_SLIDER,				CalibrationWindow::onSliderChange),
 	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_ADD_POINT_BUTTON,	CalibrationWindow::onAddPointClick),
 	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_RESET_BUTTON,		CalibrationWindow::onResetClick),
+	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_CALC_BUTTON,			CalibrationWindow::onCalcClick),
 	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_SAVE_BUTTON,			CalibrationWindow::onSaveClick)
 };
 
