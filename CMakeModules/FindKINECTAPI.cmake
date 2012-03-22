@@ -1,31 +1,30 @@
-# Locate gdal
-# This module defines
-# FOX_LIBRARY
-# FOX_FOUND, if false, do not try to link to gdal 
-# FOX_INCLUDE_DIR, where to find the headers
-#
-# $KINECTAPI_DIR is an environment variable that would
-# correspond to the ./configure --prefix=$KINECTAPI_DIR
-#
-# Created by Robert Osfield. 
 
 FIND_PATH(KINECTAPI_INCLUDE_DIR NuiApi.h
-    $ENV{KINECTAPI_DIR}/inc/
-    $ENV{KINECTAPI_DIR}/
+	PATH_SUFFIXES
+		/inc/
+	PATHS
+		$ENV{KINECTAPI_DIR}
+		$ENV{KINECTSDK10_DIR}
+		"C:/Program Files/Microsoft SDKs/Kinect/v1.0/"
 )
 
 MACRO(FIND_KINECTAPI_LIBRARY MYLIBRARY MYLIBRARYNAME)
 
     FIND_LIBRARY(${MYLIBRARY}
         NAMES ${MYLIBRARYNAME}
+		PATH_SUFFIXES
+			/lib/
+			/lib/x86/
+			/lib/amd64/
         PATHS
-        $ENV{KINECTAPI_DIR}/lib/
-        $ENV{KINECTAPI_DIR}
+			$ENV{KINECTAPI_DIR}
+			$ENV{KINECTSDK10_DIR}
+			"C:/Program Files/Microsoft SDKs/Kinect/v1.0/"
     )
 
 ENDMACRO(FIND_KINECTAPI_LIBRARY LIBRARY LIBRARYNAME)
 
-FIND_KINECTAPI_LIBRARY(KINECTAPI_LIBRARY Kinect10.lib)
+FIND_KINECTAPI_LIBRARY(KINECTAPI_LIBRARY Kinect10)
 
 SET(KINECTAPI_FOUND "NO")
 IF(FIND_KINECTAPI_LIBRARY AND KINECTAPI_INCLUDE_DIR)

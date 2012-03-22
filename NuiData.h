@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef WIN32
-	#include "NuiApi.h"
+	#include <NuiApi.h>
 #else
 	typedef struct _Vector4
 	{
