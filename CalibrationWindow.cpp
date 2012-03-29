@@ -107,6 +107,12 @@ void CalibrationWindow::create()
 
 	std::cout << " * Opening calibration window\n";
 
+#ifdef USE_OPENCV
+	std::cout << " * Using openCV calibration algorythm\n";
+#else
+	std::cout << " * Using homebaked calibration algorythm\n";
+#endif
+
 	show(PLACEMENT_SCREEN);
 
 	m_bOpen = true;
@@ -336,7 +342,28 @@ long CalibrationWindow::onSaveClick(FXObject*,FXSelector,void*ptr)
 		<< m_mxTransformation(0,0) << ' ' << m_mxTransformation(0,1) << ' ' << m_mxTransformation(0,2) << ' ' << m_mxTransformation(0,3) << "\n"
 		<< m_mxTransformation(1,0) << ' ' << m_mxTransformation(1,1) << ' ' << m_mxTransformation(1,2) << ' ' << m_mxTransformation(1,3) << "\n"
 		<< m_mxTransformation(2,0) << ' ' << m_mxTransformation(2,1) << ' ' << m_mxTransformation(2,2) << ' ' << m_mxTransformation(2,3) << "\n"
-		<< m_mxTransformation(3,0) << ' ' << m_mxTransformation(3,1) << ' ' << m_mxTransformation(3,2) << ' ' << m_mxTransformation(3,3) << "\n";
+		<< m_mxTransformation(3,0) << ' ' << m_mxTransformation(3,1) << ' ' << m_mxTransformation(3,2) << ' ' << m_mxTransformation(3,3) << "\n"
+		<< "\n\n\nUsed reference points:\n\n";
+
+	for ( unsigned i = 0; i < m_vPoints.size(); ++i )
+	{
+		Vector3 cameraVector = m_vPoints[i].first;
+		Vector3 worldVector  = m_vPoints[i].second;
+
+		fileStore
+			 << cameraVector.x() << ' ' << cameraVector.y() << ' ' << cameraVector.z()
+			 << " => "
+			 << worldVector.x() << ' ' << worldVector.y() << ' ' << worldVector.z()
+			 << "\n";
+	}
+
+#ifdef USE_OPENCV
+	fileStore << "Algorythm: openCV RANSAC\n";
+#else
+	fileStore << "Algorythm: homebrew transpose matrix\n";
+#endif
+
+	fileStore << "\n";
 	fileStore.close();
 
 	m_pSaveFeedback->setText((string("Matrix geschreven naar ") + m_sFilename).c_str());
@@ -378,6 +405,7 @@ void CalibrationWindow::repaintDepthCavas()
 				unsigned i = ((y * 640) + x);
 				// Depth pixel map: 2 bytes to the pixel
 				byte grayvalue = KinectConnector::depthPixelToGrayscale(reinterpret_cast<USHORT *>(LockedRect.pBits + (2 * i)));
+				grayvalue = (grayvalue * 2) % 256;
 				if ( grayvalue < 255 )
 				{
 					grayvalue = min(255,grayvalue + 10);
