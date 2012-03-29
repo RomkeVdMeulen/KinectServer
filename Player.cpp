@@ -33,12 +33,25 @@ void Player::run()
 		throw INVALID_FILE;
 	}
 
-	std::cout << " * Playing back Kinect data from " << m_sFileName << endl;
+	std::cout << " * Playing back Kinect data from " << m_sFileName << "\n";
 
 	unsigned loopTime = 0;
 	char buffer[sizeof(Skeleton)];
-	while ( m_bContinueThread && m_pFilestream->read( buffer, sizeof(Skeleton) ) )
+	while ( m_bContinueThread )
 	{
+		if ( !m_pFilestream->read( buffer, sizeof(Skeleton) ) )
+		{
+			if ( !m_bLoop || !m_pFilestream->eof())
+				break;
+
+			//std::cout << " * All data from " << m_sFileName << " has been replayed: looping\n";
+			m_pFilestream->clear();
+			m_pFilestream->seekg(0, ios::beg);
+			loopTime = getClockInMs();
+			if ( !m_pFilestream->read( buffer, sizeof(Skeleton) ) )
+				break;
+		}
+
 		m_ghSkeletonMutex.lock();
 
 		delete m_pLatestSkeleton;
@@ -55,14 +68,6 @@ void Player::run()
 #endif
 
 		Server::instance()->signalNewSkeletonDataAvailable();
-
-		if ( m_bLoop && m_pFilestream->peek() == EOF )
-		{
-			//std::cout << " * All data from " << m_sFileName << " has been replayed: looping\n";
-			m_pFilestream->seekg(0, ios::beg);
-			m_pFilestream->clear();
-			loopTime = getClockInMs();
-		}
 	}
 
 	if ( !m_bContinueThread )
