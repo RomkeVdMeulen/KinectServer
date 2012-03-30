@@ -57,6 +57,8 @@ void Player::run()
 		delete m_pLatestSkeleton;
 		m_pLatestSkeleton = NULL;
 		m_pLatestSkeleton = new Skeleton( *reinterpret_cast<Skeleton const *>(buffer) );
+		Skeleton transformedSkeleton(*m_pLatestSkeleton);
+		transformedSkeleton.transform( Server::instance()->getCalibration() );
 		
 		m_ghSkeletonMutex.unlock();
 
