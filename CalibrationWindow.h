@@ -8,7 +8,7 @@
 #include <utility>
 #include "Vector3.h"
 #include <osg/Matrix>
-
+#include "Skeleton.h"
 
 namespace RuGKinectInterfaceServer
 {
@@ -30,9 +30,10 @@ public:
 	enum {
 		FIRST=FXMainWindow::ID_LAST,
 		ID_CANVAS,
-		ID_SLIDER,
+		ID_JOINTSELECT,
 		ID_CAMERA_INPUT,
 		ID_WORLD_INPUT,
+		ID_USE_CURRENT_COORDINATES,
 		ID_RESET_BUTTON,
 		ID_ADD_POINT_BUTTON,
 		ID_CALC_BUTTON,
@@ -41,8 +42,8 @@ public:
     } MESSAGES;
 
 	long onPaint(FXObject*,FXSelector,void*);
-	long onMouseDown(FXObject*,FXSelector,void* ptr);
-	long onSliderChange(FXObject*,FXSelector,void*ptr);
+	long onUseCoordinatesClick(FXObject*,FXSelector,void*ptr);
+	long onJointSelect(FXObject*,FXSelector,void*ptr);
 	long onAddPointClick(FXObject*,FXSelector,void*ptr);
 	long onResetClick(FXObject*,FXSelector,void*);
 	long onCalcClick(FXObject*,FXSelector,void*);
@@ -51,9 +52,6 @@ public:
 
 protected:
 	CalibrationWindow();
-
-	FXuint m_uSelectedX, m_uSelectedY;
-	Vector3 m_vSelectedPosition;
 
 	FXCanvas			* m_pVideoCanvas;
 	FXCanvas			* m_pDepthCanvas;
@@ -66,15 +64,16 @@ protected:
 
 	FXButton			* m_pCalcButton;
 
-	FXSlider			* m_pFieldX;
-	FXSlider			* m_pFieldY;
-
 	FXTextField			* m_pCameraX;
 	FXTextField			* m_pCameraY;
 	FXTextField			* m_pCameraZ;
 	FXTextField			* m_pWorldX;
 	FXTextField			* m_pWorldY;
 	FXTextField			* m_pWorldZ;
+
+	FXListBox			* m_pJointSelect;
+
+	Skeleton::SKELETON_JOINT_INDEX m_uTrackedJoint;
 
 	std::vector< std::pair<Vector3,Vector3> > m_vPoints;
 	osg::Matrix m_mxTransformation;
@@ -84,10 +83,9 @@ protected:
 	bool m_bOpen;
 
 	void repaintVideoCavas();
-	void repaintDepthCavas();
+	void repaintSkeletonCavas();
 
-	void updatePixelInfo();
-	void resetPixelInfo();
+	void updateTrackingInfo();
 
 	void updateStatusInfo();
 	void recalcTransformation();

@@ -355,6 +355,9 @@ DataMutex &Server::getSkeletonMutex()
 void Server::signalNewSkeletonDataAvailable()
 {
 	m_pNewSkeletonDataCondition->broadcast();
+
+	if ( m_pFOXApp )
+		m_pFOXApp->refresh();
 }
 
 Skeleton Server::getLatestSkeleton() const

@@ -21,22 +21,17 @@
 using namespace RuGKinectInterfaceServer;
 
 CalibrationWindow::CalibrationWindow()
-: FXMainWindow(), m_bOpen( false ), m_uSelectedX( 0 ), m_uSelectedY( 0 ), m_mxTransformation( 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 )
+: FXMainWindow(), m_bOpen( false ), m_uTrackedJoint( Skeleton::JOINT_HAND_RIGHT ), m_mxTransformation( 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1 )
 {}
 
 CalibrationWindow::CalibrationWindow(FXApp* a, string const &filename)
-: FXMainWindow(a,WINDOW_TITLE,NULL,NULL,DECOR_ALL,0,0,1280,800), m_bOpen( false ), m_uSelectedX( 0 ), m_uSelectedY( 0 ), m_mxTransformation( osg::Matrix::identity() ), m_sFilename( filename )
+: FXMainWindow(a,WINDOW_TITLE,NULL,NULL,DECOR_ALL,0,0,1280,800), m_bOpen( false ), m_uTrackedJoint( Skeleton::JOINT_HAND_RIGHT ), m_mxTransformation( osg::Matrix::identity() ), m_sFilename( filename )
 {
 	FXVerticalFrame *pContents		= new FXVerticalFrame(this,FRAME_SUNKEN|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0);
 	FXHorizontalFrame *pTopHalf		= new FXHorizontalFrame(pContents,LAYOUT_SIDE_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_FIX_HEIGHT,0,0,0,480, 0,0,0,0);
 	FXHorizontalFrame *pBottomHalf	= new FXHorizontalFrame(pContents,LAYOUT_SIDE_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 
 	FXHorizontalFrame *pColorCanvasFrame = new FXHorizontalFrame(pTopHalf,LAYOUT_SIDE_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
-
-	m_pFieldY = new FXSlider(pTopHalf,this,ID_SLIDER,SLIDER_VERTICAL|LAYOUT_FIX_HEIGHT,0,0,0,480);
-	m_pFieldY->setValue(0);
-	m_pFieldY->setRange(0,480);
-
 	FXHorizontalFrame *pDepthCanvasFrame = new FXHorizontalFrame(pTopHalf,LAYOUT_SIDE_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 	
 	m_pVideoCanvas = new FXCanvas(pColorCanvasFrame,this,ID_CANVAS,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN);
@@ -44,15 +39,14 @@ CalibrationWindow::CalibrationWindow(FXApp* a, string const &filename)
 
 	FXVerticalFrame *pOptionsFrame = new FXVerticalFrame(pBottomHalf,FRAME_SUNKEN|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0);
 
-	m_pFieldX = new FXSlider(pOptionsFrame,this,ID_SLIDER,SLIDER_NORMAL|LAYOUT_FIX_WIDTH|LAYOUT_FIX_X,640,0,640);
-	m_pFieldX->setValue(0);
-	m_pFieldX->setRange(0,640);
-
 	FXHorizontalFrame *pOptionsSub  = new FXHorizontalFrame(pOptionsFrame,LAYOUT_SIDE_TOP|LAYOUT_CENTER_X|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 
 	FXVerticalFrame   *pInputFrame	= new FXVerticalFrame(pOptionsSub,FRAME_SUNKEN|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0);
 
-	m_pCoordinates = new FXLabel(pInputFrame,"",0,LABEL_NORMAL|LAYOUT_FIX_HEIGHT,0,0,0,20);
+	m_pJointSelect = new FXListBox(pInputFrame, this, ID_JOINTSELECT);
+
+	m_pCoordinates = new FXLabel(pInputFrame,"Current coordinates: ",0,LABEL_NORMAL|LAYOUT_FIX_HEIGHT,0,0,0,20);
+	new FXButton(pInputFrame,"Use these",0,this,ID_USE_CURRENT_COORDINATES);
 
 	FXHorizontalFrame *pInputFields	= new FXHorizontalFrame(pInputFrame,LAYOUT_SIDE_TOP|LAYOUT_CENTER_X|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 	FXVerticalFrame   *pCameraInput	= new FXVerticalFrame(pInputFields,LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0);
@@ -72,7 +66,7 @@ CalibrationWindow::CalibrationWindow(FXApp* a, string const &filename)
 
 	FXHorizontalFrame *pButtonFrame	= new FXHorizontalFrame(pInputFrame,LAYOUT_SIDE_TOP|LAYOUT_CENTER_X|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 
-	new FXButton(pButtonFrame,"Gebruik als referentie punt",0,this,ID_ADD_POINT_BUTTON,BUTTON_NORMAL,0,0);
+	new FXButton(pButtonFrame,"Gebruik als referentie punt",0,this,ID_ADD_POINT_BUTTON);
 
 	FXVerticalFrame   *pStorageFrame	= new FXVerticalFrame(pOptionsSub,FRAME_SUNKEN|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0);
 	FXHorizontalFrame *pStatusFrame 	= new FXHorizontalFrame(pStorageFrame,LAYOUT_SIDE_TOP|LAYOUT_CENTER_X|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
@@ -94,6 +88,20 @@ CalibrationWindow::CalibrationWindow(FXApp* a, string const &filename)
 	new FXButton(pStorageFrame,"Opslaan",0,this,ID_SAVE_BUTTON,BUTTON_NORMAL,0,0);
 
 	m_pSaveFeedback = new FXLabel(pStorageFrame,"");
+
+	m_pJointSelect->appendItem("Elbow left");
+	m_pJointSelect->appendItem("Wrist left");
+	m_pJointSelect->appendItem("Hand left");
+	m_pJointSelect->appendItem("Elbow right");
+	m_pJointSelect->appendItem("Wrist right");
+	m_pJointSelect->appendItem("Hand right");
+	m_pJointSelect->appendItem("Knee left");
+	m_pJointSelect->appendItem("Ankle left");
+	m_pJointSelect->appendItem("Foot left");
+	m_pJointSelect->appendItem("Knee right");
+	m_pJointSelect->appendItem("Ankle right");
+	m_pJointSelect->appendItem("Foot right");
+	m_pJointSelect->setCurrentItem(5);
 }
 
 CalibrationWindow::~CalibrationWindow()
@@ -102,8 +110,6 @@ CalibrationWindow::~CalibrationWindow()
 void CalibrationWindow::create()
 {
 	FXMainWindow::create();
-	m_pFieldX->create();
-	m_pFieldY->create();
 
 	std::cout << " * Opening calibration window\n";
 
@@ -127,60 +133,104 @@ long CalibrationWindow::onClose(FXObject*,FXSelector,void*)
 
 long CalibrationWindow::onPaint(FXObject*,FXSelector,void*)
 {
-	repaintDepthCavas();
+	repaintSkeletonCavas();
 	repaintVideoCavas();
 
 	return 0;
 }
 
-long CalibrationWindow::onMouseDown(FXObject*,FXSelector,void* ptr)
+long CalibrationWindow::onJointSelect(FXObject*,FXSelector,void*ptr)
 {
-	FXEvent *ev=(FXEvent*) ptr;
-	m_uSelectedX = ev->win_x;
-	m_uSelectedY = ev->win_y;
-	resetPixelInfo();
+	cout << " * Tracking ";
 
-	return 0;
-}
+	switch ( m_pJointSelect->getCurrentItem() )
+	{
+		case 0:
+			m_uTrackedJoint = Skeleton::JOINT_ELBOW_LEFT;
+			cout << "left elbow";
+		break;
 
-long CalibrationWindow::onSliderChange(FXObject*,FXSelector,void*ptr)
-{
-	m_uSelectedX = m_pFieldX->getValue();
-	m_uSelectedY = 480 - m_pFieldY->getValue();
-	resetPixelInfo();
+		case 1:
+			m_uTrackedJoint = Skeleton::JOINT_WRIST_LEFT;
+			cout << "left wrist";
+		break;
 
-	return 0;
-}
+		case 2:
+			m_uTrackedJoint = Skeleton::JOINT_HAND_LEFT;
+			cout << "left hand";
+		break;
 
-void CalibrationWindow::updatePixelInfo()
-{
-	m_pFieldX->setValue(m_uSelectedX);
-	m_pFieldY->setValue(480 - m_uSelectedY);
+		case 3:
+			m_uTrackedJoint = Skeleton::JOINT_ELBOW_RIGHT;
+			cout << "right elbow";
+		break;
 
-	string coordinate_text = string("Current coordinates: ") + 
-		m_vSelectedPosition.x_string() + ", " + 
-		m_vSelectedPosition.y_string() + ", " + 
-		m_vSelectedPosition.z_string();
-	m_pCoordinates->setText(coordinate_text.c_str());
+		case 4:
+			m_uTrackedJoint = Skeleton::JOINT_WRIST_RIGHT;
+			cout << "right wrist";
+		break;
 
-	if ( !m_pCameraX->getText() )
-		m_pCameraX->setText(m_vSelectedPosition.x_string().c_str());
-	if ( !m_pCameraY->getText() )
-		m_pCameraY->setText(m_vSelectedPosition.y_string().c_str());
-	if ( !m_pCameraZ->getText() )
-		m_pCameraZ->setText(m_vSelectedPosition.z_string().c_str());
-}
+		case 5:
+			m_uTrackedJoint = Skeleton::JOINT_HAND_RIGHT;
+			cout << "right hand";
+		break;
 
-void CalibrationWindow::resetPixelInfo()
-{
-	m_vSelectedPosition = Vector3();
+		case 6:
+			m_uTrackedJoint = Skeleton::JOINT_KNEE_LEFT;
+			cout << "left knee";
+		break;
+
+		case 7:
+			m_uTrackedJoint = Skeleton::JOINT_ANKLE_LEFT;
+			cout << "left ankle";
+		break;
+
+		case 8:
+			m_uTrackedJoint = Skeleton::JOINT_FOOT_LEFT;
+			cout << "left foot";
+		break;
+
+		case 9:
+			m_uTrackedJoint = Skeleton::JOINT_KNEE_RIGHT;
+			cout << "right knee";
+		break;
+
+		case 10:
+			m_uTrackedJoint = Skeleton::JOINT_ANKLE_RIGHT;
+			cout << "right ankle";
+		break;
+
+		case 11:
+			m_uTrackedJoint = Skeleton::JOINT_FOOT_RIGHT;
+			cout << "right foot";
+		break;
+	}
+
+	cout << " for mapping data";
 	
-	m_pCoordinates->setText("");
-	m_pCameraX->setText("");
-	m_pCameraY->setText("");
-	m_pCameraZ->setText("");
+	return 0;
+}
 
-	m_pSaveFeedback->setText("");
+void CalibrationWindow::updateTrackingInfo()
+{
+	Skeleton skeleton = Server::instance()->getConnector()->getLatestSkeleton();
+
+	string coordinate_text = string("Current coordinates: ")
+		+ skeleton.getJointPosition(m_uTrackedJoint).x_string() + ' '
+		+ skeleton.getJointPosition(m_uTrackedJoint).y_string() + ' '
+		+ skeleton.getJointPosition(m_uTrackedJoint).z_string() + ' ';
+	m_pCoordinates->setText(coordinate_text.c_str());
+}
+
+long CalibrationWindow::onUseCoordinatesClick(FXObject*,FXSelector,void*ptr)
+{
+	Skeleton skeleton = Server::instance()->getConnector()->getLatestSkeleton();
+
+	m_pCameraX->setText(skeleton.getJointPosition(m_uTrackedJoint).x_string().c_str());
+	m_pCameraY->setText(skeleton.getJointPosition(m_uTrackedJoint).y_string().c_str());
+	m_pCameraZ->setText(skeleton.getJointPosition(m_uTrackedJoint).z_string().c_str());
+
+	return 0;
 }
 
 long CalibrationWindow::onAddPointClick(FXObject*,FXSelector,void*ptr)
@@ -371,85 +421,37 @@ long CalibrationWindow::onSaveClick(FXObject*,FXSelector,void*ptr)
 	return 0;
 }
 
-void CalibrationWindow::repaintDepthCavas()
+void CalibrationWindow::repaintSkeletonCavas()
 {
 	KinectConnector *pConnector = Server::instance()->getConnector();
 
 	if ( !pConnector->hasDepthData() )
 		return;
 
-	pConnector->getDepthMutex().lock();
-	
-	NUI_IMAGE_FRAME const *pData = pConnector->getLatestDepthData();
-	INuiFrameTexture *pTexture = pData->pFrameTexture;
-	if ( !pTexture )
-	{
-		pConnector->getDepthMutex().unlock();
-		return;
-	}
-	FXDCWindow dc(m_pDepthCanvas);
-
-	NUI_LOCKED_RECT LockedRect;
-	if ( pTexture->LockRect( 0, &LockedRect, NULL, 0 ) != S_OK)
-	{
-		pConnector->getDepthMutex().unlock();
-		return;
-	}
-
-	if ( LockedRect.Pitch != 0 )
-	{
-		FXColor *colormap = new FXColor[640*480];
-		for ( unsigned y = 0; y < 480; ++y )
-			for ( unsigned x = 0; x < 640; ++x )
-			{
-				unsigned i = ((y * 640) + x);
-				// Depth pixel map: 2 bytes to the pixel
-				byte grayvalue = KinectConnector::depthPixelToGrayscale(reinterpret_cast<USHORT *>(LockedRect.pBits + (2 * i)));
-				grayvalue = (grayvalue * 2) % 256;
-				if ( grayvalue < 255 )
-				{
-					grayvalue = min(255,grayvalue + 10);
-					colormap[i] = FXRGB(grayvalue,grayvalue,grayvalue);
-				}
-				else
-					colormap[i] = FXRGB(255,240,240);
-			}
-		FXImage *pDepthImage = new FXImage(getApp(), colormap, 0, 640, 480);
-		pDepthImage->create();
-		dc.drawImage(pDepthImage,0,0);
-		delete[] colormap, delete pDepthImage;
-
-		if ( m_uSelectedX != 0 || m_uSelectedY != 0 )
-		{
-			dc.setForeground(FXRGB(255,0,0));
-			dc.drawLine(m_uSelectedX - 5,m_uSelectedY,m_uSelectedX + 5,m_uSelectedY);
-			dc.setForeground(FXRGB(0,255,0));
-			dc.drawLine(m_uSelectedX,m_uSelectedY - 5,m_uSelectedX,m_uSelectedY + 5);
-
-			unsigned i = ((m_uSelectedY * 640) + m_uSelectedX);
-			m_vSelectedPosition = KinectConnector::depthPixelToSkeletonCoordinates(m_uSelectedX,m_uSelectedY,*reinterpret_cast<USHORT *>(LockedRect.pBits + (2 * i)));
-			updatePixelInfo();
-			
-		}
-	}
-
-	pConnector->getDepthMutex().unlock();
-
 	Skeleton skeleton = pConnector->getLatestSkeleton();
-	if ( skeleton )
-	{
-		dc.setForeground(FXRGB(0,0,255));
-		for ( unsigned i = 0; i < Skeleton::BONE_COUNT; ++i )
-		{
-			Vector3 normalizedFirstPosition  = skeleton.getJointPosition(Skeleton::BONES[i][0]).kinectNormalized();
-			Vector3 normalizedSecondPosition = skeleton.getJointPosition(Skeleton::BONES[i][1]).kinectNormalized();
-		
-			int height = m_pDepthCanvas->getHeight();
-			int width  = m_pDepthCanvas->getWidth();
+	if ( !skeleton )
+		return;
 
-			dc.drawLine((normalizedFirstPosition.x() + 0.5) * width + 5, (-normalizedFirstPosition.y() + 0.5) * height + 5, (normalizedSecondPosition.x() + 0.5) * width + 5, (-normalizedSecondPosition.y() + 0.5) * height + 5);
-		}
+	int height = m_pDepthCanvas->getHeight();
+	int width  = m_pDepthCanvas->getWidth();
+
+	FXDCWindow dc(m_pDepthCanvas);
+	dc.setForeground(m_pDepthCanvas->getBackColor());
+	dc.fillRectangle( 0,0,width,height );
+
+	dc.setForeground(FXRGB(0,0,255));
+	for ( unsigned i = 0; i < Skeleton::BONE_COUNT; ++i )
+	{
+		Vector3 normalizedFirstPosition  = skeleton.getJointPosition(Skeleton::BONES[i][0]).kinectNormalized();
+		Vector3 normalizedSecondPosition = skeleton.getJointPosition(Skeleton::BONES[i][1]).kinectNormalized();
+		
+		dc.drawLine((normalizedFirstPosition.x() + 0.5) * width + 5, (-normalizedFirstPosition.y() + 0.5) * height + 5, (normalizedSecondPosition.x() + 0.5) * width + 5, (-normalizedSecondPosition.y() + 0.5) * height + 5);
 	}
+
+	dc.setForeground( FXRGB(0,255,0) );
+	Vector3 normalizedPosition = skeleton.getJointPosition(m_uTrackedJoint).kinectNormalized();
+	dc.fillEllipse((normalizedPosition.x() + 0.5) * width, (-normalizedPosition.y() + 0.5) * height, 10, 10);
+	updateTrackingInfo();
 }
 
 void CalibrationWindow::repaintVideoCavas()
@@ -493,14 +495,6 @@ void CalibrationWindow::repaintVideoCavas()
 		pVideoImage->create();
 		dc.drawImage(pVideoImage,0,0);
 		delete[] colormap, delete pVideoImage;
-
-		if ( m_uSelectedX != 0 || m_uSelectedY != 0 )
-		{
-			dc.setForeground(FXRGB(255,0,0));
-			dc.drawLine(m_uSelectedX - 5,m_uSelectedY,m_uSelectedX + 5,m_uSelectedY);
-			dc.setForeground(FXRGB(0,255,0));
-			dc.drawLine(m_uSelectedX,m_uSelectedY - 5,m_uSelectedX,m_uSelectedY + 5);
-		}
 	}
 
 	pConnector->getVideoMutex().unlock();
@@ -519,16 +513,16 @@ float CalibrationWindow::fxStringToFloat(FXString const &string) const
 
 // Message Map for the Kinect Client Window class
 FXDEFMAP(CalibrationWindow) CalibrationWindowMap[]={
-	//_________Message_Type___________________________ID__________________________________Message_Handler__________
-	FXMAPFUNC(SEL_LEFTBUTTONPRESS,   CalibrationWindow::ID_CANVAS,				CalibrationWindow::onMouseDown),
-	FXMAPFUNC(SEL_UPDATE,			 CalibrationWindow::ID_CANVAS,				CalibrationWindow::onPaint),
-	FXMAPFUNC(SEL_PAINT,			 CalibrationWindow::ID_CANVAS,				CalibrationWindow::onPaint),
-	FXMAPFUNC(SEL_CLOSE,			 CalibrationWindow::ID_CANVAS,				CalibrationWindow::onClose),
-	FXMAPFUNC(SEL_CHANGED,			 CalibrationWindow::ID_SLIDER,				CalibrationWindow::onSliderChange),
-	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_ADD_POINT_BUTTON,	CalibrationWindow::onAddPointClick),
-	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_RESET_BUTTON,		CalibrationWindow::onResetClick),
-	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_CALC_BUTTON,			CalibrationWindow::onCalcClick),
-	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_SAVE_BUTTON,			CalibrationWindow::onSaveClick)
+	//_________Message_Type___________________________ID___________________________________________Message_Handler________________
+	FXMAPFUNC(SEL_UPDATE,			 CalibrationWindow::ID_CANVAS,						CalibrationWindow::onPaint),
+	FXMAPFUNC(SEL_PAINT,			 CalibrationWindow::ID_CANVAS,						CalibrationWindow::onPaint),
+	FXMAPFUNC(SEL_CLOSE,			 CalibrationWindow::ID_CANVAS,						CalibrationWindow::onClose),
+	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_JOINTSELECT,					CalibrationWindow::onJointSelect),
+	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_USE_CURRENT_COORDINATES,		CalibrationWindow::onUseCoordinatesClick),
+	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_ADD_POINT_BUTTON,			CalibrationWindow::onAddPointClick),
+	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_RESET_BUTTON,				CalibrationWindow::onResetClick),
+	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_CALC_BUTTON,					CalibrationWindow::onCalcClick),
+	FXMAPFUNC(SEL_COMMAND,			 CalibrationWindow::ID_SAVE_BUTTON,					CalibrationWindow::onSaveClick)
 };
 
 // Macro for the Kinect Client class hierarchy implementation
