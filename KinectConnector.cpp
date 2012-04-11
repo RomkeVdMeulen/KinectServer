@@ -272,6 +272,7 @@ unsigned KinectConnector::getClockInMs()
 void KinectConnector::updateSkeletonData()
 {
     bool bFoundSkeleton = false;
+	float fClosestDistance = 0;
     if ( SUCCEEDED(m_pNuiSensor->NuiSkeletonGetNextFrame( 0, m_pLatestSkeletonFrame )) )
     {
         for ( int i = 0 ; i < NUI_SKELETON_COUNT ; i++ )
@@ -282,7 +283,11 @@ void KinectConnector::updateSkeletonData()
 				{
 					cout << " * Skeleton " << i << " found at " << m_pLatestSkeletonFrame->SkeletonData[i].Position.z << " meters from camera, " << (int) (clock() / CLOCKS_PER_SEC) << " seconds after startup\n\n";
 					
-					m_nActiveSkeleton = i;
+					if ( fClosestDistance == 0 || fClosestDistance > m_pLatestSkeletonFrame->SkeletonData[i].Position.z )
+					{
+						m_nActiveSkeleton = i;
+						fClosestDistance =  m_pLatestSkeletonFrame->SkeletonData[i].Position.z;
+					}
 
 					m_bArrSkeletonsTracked[i] = true;
 				}
