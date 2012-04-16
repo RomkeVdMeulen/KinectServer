@@ -20,7 +20,12 @@ Cross compilation has only been checked on Linux so far.
 * Requirements *
 ****************
 
+ * Windows: Kinect API
+   * Optional but recommended on Windows: openCV (http://opencv.willowgarage.com)
+   * If you use dynimacally linked openCV and get an error for missing tbb_debug.dll
+     Read http://stackoverflow.com/questions/7293160/c-tbb-debug-dll-missing
  * CMake (http://www.cmake.org)
+   * On Windows: Visual C++ studio (or express)
  * The OpenSceneGraph library (http://www.openscenegraph.com)
    * Precompiled binaries available at http://openscenegraph.alphapixel.com/osg/downloads/free-openscenegraph-binary-downloads
  * The FOX toolkit (http://www.fox-toolkit.org)
@@ -30,3 +35,9 @@ Cross compilation has only been checked on Linux so far.
 ****************
 
 Use CMake to create platform specific build files, specifying location of required libraries.
+CMake tests the following environmental settings for paths of required libraries:
+ * KINECTAPI_DIR, KINECTSDK10_DIR
+ * FOX_DIR
+ * OPENCV_DIR, OPENCVDIR
+ * OSG_DIR, OSGDIR, OSG_SOURCE_DIR
+
