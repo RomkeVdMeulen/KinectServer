@@ -66,7 +66,7 @@ public:
 
 	// Lock the current thread untill data available
 	// Also automatically locks the associated mutex
-	void waitForNewSkeletonData();
+	bool waitForNewSkeletonData(int ms = -1);
 	DataMutex &getSkeletonMutex();
 	void signalNewSkeletonDataAvailable();
 

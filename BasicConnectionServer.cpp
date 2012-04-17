@@ -35,10 +35,14 @@ void BasicConnectionServer::run()
 			break;
 		}
 
-		Server::instance()->waitForNewSkeletonData();
+		if ( !Server::instance()->waitForNewSkeletonData( 500 ) )
+		{
+			Server::instance()->getSkeletonMutex().unlock();
+			continue;
+		}
 
 		try {
-		m_pCommunicator->sendSekeleton();
+			m_pCommunicator->sendSekeleton();
 		} catch ( int code ) {
 			if ( code == Communicator::NOT_CONNECTED_EXCEPTION ) {
 				cerr << "\n### Connection lost, closing server thread ###\n";

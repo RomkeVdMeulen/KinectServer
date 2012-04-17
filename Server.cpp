@@ -335,9 +335,12 @@ void Server::signalNewDepthDataAvailable()
 
 #endif
 
-void Server::waitForNewSkeletonData()
+bool Server::waitForNewSkeletonData(int ms)
 {
-	m_pNewSkeletonDataCondition->wait( &getSkeletonMutex() );
+	if ( ms == -1 )
+		return ( m_pNewSkeletonDataCondition->wait( &getSkeletonMutex() ) == 0);
+	else
+		return ( m_pNewSkeletonDataCondition->wait( &getSkeletonMutex(), (unsigned) ms ) == 0);
 }
 
 DataMutex &Server::getSkeletonMutex()
