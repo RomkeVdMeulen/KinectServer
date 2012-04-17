@@ -81,7 +81,7 @@
 #else
 	#define DBG_REPORTERR(proc,msg)		\
 	{ \
-		cerr << "\n### " << proc << ": " << std::string(msg) << ") ###\n"; \
+		cerr << "\n### " << proc << ": " << std::string(msg) << " (error code " << _errorcode << ") ###\n"; \
 	}
 #endif
 
@@ -254,8 +254,8 @@ TCPSocket::realize()
 	{
 		if( (_socket = ::socket(PF_INET, SOCK_STREAM, 0)) < 0 )
 	    {
-			DBG_REPORTERR("TCPSocket::realize()", "Socket creation failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::realize()", "Socket creation failed")
 			return false;
 	    }
 
@@ -288,8 +288,8 @@ TCPSocket::setBooleanSockOpt(int level, int option, bool value)
 
 	if (SOCKERR(res))
 	{
-		_errorcode = ERRORCODE;
 		DBG_REPORTERR("TCPSocket::setBooleanSockOpt()", "Setting socket option failed")
+		_errorcode = ERRORCODE;
 		return false;
 	}
 
@@ -313,8 +313,8 @@ TCPSocket::setIntegerSockOpt(int level, int option, int value)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::setIntegerSockOpt()", "::setsockopt() failed")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::setIntegerSockOpt()", "::setsockopt() failed")
 		return false;
 	}
 
@@ -349,8 +349,8 @@ TCPSocket::getBooleanSockOpt(int level, int option)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::getBooleanSockOpt()", "::getsockopt() failed")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::getBooleanSockOpt()", "::getsockopt() failed")
 		return false;			// XXX false means error here :-/
 	}
 
@@ -384,8 +384,8 @@ TCPSocket::getIntegerSockOpt(int level, int option)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::getIntegerSockOpt()", "::getsockopt() failed")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::getIntegerSockOpt()", "::getsockopt() failed")
 		return -1;
 	}
 
@@ -414,8 +414,8 @@ TCPSocket::setBlocking(bool value)
 	res = ::fcntl(_socket, F_GETFL, 0);
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::setBlocking()", "Getting socket mode using ::fcntl() failed")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::setBlocking()", "Getting socket mode using ::fcntl() failed")
 		return false;
 	}
 
@@ -431,8 +431,8 @@ TCPSocket::setBlocking(bool value)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::setBlocking()", "Setting socket blocking mode failed")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::setBlocking()", "Setting socket blocking mode failed")
 		return false;
 	}
 
@@ -474,8 +474,8 @@ TCPSocket::shutdown(bool forRead, bool forWrite)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::shutdown()", "Socket shutdown failed")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::shutdown()", "Socket shutdown failed")
 		return false;
 	}
 
@@ -505,8 +505,8 @@ TCPSocket::close()
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::close()", "Error returned when attempting to close socket")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::close()", "Error returned when attempting to close socket")
 		return false;
 	}
 
@@ -550,8 +550,8 @@ TCPSocket::bind(const short localPort, const std::string& localAddress)
 		struct hostent *h;
 		if( (h = gethostbyname(localAddress.c_str())) == NULL )
     	{
-			DBG_REPORTERR("TCPSocket::bind()", "Cannot resolve an address for given hostname '"+localAddress+"'")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::bind()", "Cannot resolve an address for given hostname '"+localAddress+"'")
 			_localAddress = 0;
 			return false;
     	}
@@ -575,8 +575,8 @@ TCPSocket::bind(const short localPort, const std::string& localAddress)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::bind()", "Could not bind to local address")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::bind()", "Could not bind to local address")
 		return false;
 	}
 
@@ -608,8 +608,8 @@ TCPSocket::listen(int backlog)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::listen()", "Could not ::listen()")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::listen()", "Could not ::listen()")
 		return false;
 	}
 
@@ -659,8 +659,8 @@ TCPSocket::accept()
 	if (SOCKERR(res))
 #endif
 	{
-		DBG_REPORTERR("TCPSocket::accept()", "Call to ::accept() failed")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::accept()", "Call to ::accept() failed")
 		return NULL;
 	}
 
@@ -705,8 +705,8 @@ TCPSocket::connect(const std::string& destAddress, const short destPort)
 	struct hostent *h;
 	if( (h = gethostbyname(destAddress.c_str())) == NULL )
     {
-		DBG_REPORTERR("TCPSocket::connect(const std::string&, const short)", "Cannot resolve an address for given hostname '"+destAddress+"'");
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::connect(const std::string&, const short)", "Cannot resolve an address for given hostname '"+destAddress+"'");
 		_remoteAddress = 0;
 		return false;
     }
@@ -724,8 +724,8 @@ TCPSocket::connect(const std::string& destAddress, const short destPort)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::connect(const std::string&, const short)", "Could not connect")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::connect(const std::string&, const short)", "Could not connect")
 		return false;
 	}
 
@@ -767,8 +767,8 @@ TCPSocket::connect(sockaddr_in_t addr)
 
 	if (SOCKERR(res))
 	{
-		DBG_REPORTERR("TCPSocket::connect(sockaddr_in_t)", "Could not connect")
 		_errorcode = ERRORCODE;
+		DBG_REPORTERR("TCPSocket::connect(sockaddr_in_t)", "Could not connect")
 		return false;
 	}
 
@@ -845,8 +845,8 @@ TCPSocket::readable()
 
 		if (SOCKERR(res))
 		{
-			DBG_REPORTERR("TCPSocket::readable()", "::select() failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::readable()", "::select() failed")
 			return -1;
 		}
 		else if (res == 0)
@@ -898,8 +898,8 @@ TCPSocket::writable()
 
 		if (SOCKERR(res))
 		{
-			DBG_REPORTERR("TCPSocket::writable()", "::select() failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::writable()", "::select() failed")
 			return -1;
 		}
 		else if (res == 0)
@@ -956,8 +956,8 @@ TCPSocket::waitUntilReadable(int timeout)
 
 		if (SOCKERR(res))
 		{
-			DBG_REPORTERR("TCPSocket::waitUntilReadable()", "::select() failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::waitUntilReadable()", "::select() failed")
 			return false;	// FIXME
 		}
         _errorcode = NOERROR;
@@ -1010,8 +1010,8 @@ TCPSocket::waitUntilWritable(int timeout)
 
 		if (SOCKERR(res))
 		{
-			DBG_REPORTERR("TCPSocket::waitUntilWritable()", "::select() failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::waitUntilWritable()", "::select() failed")
 			return false;	// FIXME
 		}
 
@@ -1059,8 +1059,8 @@ TCPSocket::peek(char *buffer, unsigned int& size)
 		if (SOCKERR(res))
 #endif
 		{
-			DBG_REPORTERR("TCPSocket::peek()", "::recv() failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::peek()", "::recv() failed")
 			return false;
 		}
 		else if (res == 0)
@@ -1108,8 +1108,8 @@ TCPSocket::recv(char *buffer, unsigned int buffersize)
 
 		if (SOCKERR(res))
 		{
-			DBG_REPORTERR("TCPSocket::recv()", "::recv() failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::recv()", "::recv() failed")
 			return -1;
 		}
 		else if (res == 0)
@@ -1179,8 +1179,8 @@ TCPSocket::recvAmount(char* buffer, unsigned int amount)
 				}
 #endif
 
-				DBG_REPORTERR("TCPSocket::recvAmount()", "::recv() failed")
 				_errorcode = ERRORCODE;
+				DBG_REPORTERR("TCPSocket::recvAmount()", "::recv() failed")
 				return -1;
 			}
 			else if (res == 0)
@@ -1244,8 +1244,8 @@ TCPSocket::send(const char *buffer, unsigned int datasize)
 				return -2;
 			}
 #endif
-			DBG_REPORTERR("TCPSocket::send()", "::send() failed")
 			_errorcode = ERRORCODE;
+			DBG_REPORTERR("TCPSocket::send()", "::send() failed")
 			return -1;
 		}
 ///////////////DEBUG
@@ -1292,8 +1292,8 @@ TCPSocket::sendAll(const char *buffer, unsigned int datasize)
 
 			if (SOCKERR(res))
 			{
-				DBG_REPORTERR("TCPSocket::sendAll()", "::send() failed")
 				_errorcode = ERRORCODE;
+				DBG_REPORTERR("TCPSocket::sendAll()", "::send() failed")
 				return -1;
 			}
 
