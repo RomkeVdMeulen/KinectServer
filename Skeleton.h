@@ -52,10 +52,10 @@ public:
 
 	operator bool() const;
 
-	unsigned int getTime() const { return m_dTime; }
-
-	// Positions of joints
+	Vector3 getPosition() const { return m_vCentralPosition; }
 	Vector3 getJointPosition(SKELETON_JOINT_INDEX i) const { return m_vSkeletonPositions[i]; }
+
+	unsigned int getTime() const { return m_dTime; }
 
 	void transform(osg::Matrix const &transform);
 

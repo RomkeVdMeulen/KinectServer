@@ -27,7 +27,7 @@ public:
 	};
 	
 	static Server *instance();
-	static bool isInitialized() { return s_pInstance; }
+	static bool isInitialized() { return s_pInstance != 0; }
 	~Server();
 
 	// Arguments
