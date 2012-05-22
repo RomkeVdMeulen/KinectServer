@@ -70,13 +70,14 @@ CalibrationWindow::CalibrationWindow(FXApp* a, string const &filename)
 
 	FXVerticalFrame   *pStorageFrame	= new FXVerticalFrame(pOptionsSub,FRAME_SUNKEN|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0);
 	FXHorizontalFrame *pStatusFrame 	= new FXHorizontalFrame(pStorageFrame,LAYOUT_SIDE_TOP|LAYOUT_CENTER_X|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
-	FXVerticalFrame   *pPointsFrame		= new FXVerticalFrame(pStatusFrame,LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FIX_WIDTH,0,0,300,0);
+	FXVerticalFrame   *pPointsFrame		= new FXVerticalFrame(pStatusFrame,LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FIX_WIDTH,0,0,700,0);
 	FXVerticalFrame   *pMatrixFrame		= new FXVerticalFrame(pStatusFrame,LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0,20);
 
 	new FXLabel(pPointsFrame,"Referentie punten");
 	FXHorizontalFrame *pPointsLists 	= new FXHorizontalFrame(pPointsFrame,LAYOUT_SIDE_TOP|LAYOUT_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 	m_pCameraPoints = new FXLabel(pPointsLists,"",0,LABEL_NORMAL,0,0,0,0,2,15);
 	m_pWorldPoints  = new FXLabel(pPointsLists,"");
+	m_pCalculatedWorldPoints = new FXLabel(pPointsLists,"");
 
 	new FXButton(pPointsFrame,"Reset",0,this,ID_RESET_BUTTON,BUTTON_NORMAL,0,0);
 	m_pCalcButton = new FXButton(pPointsFrame,"Bereken",0,this,ID_CALC_BUTTON,BUTTON_NORMAL,0,0);
@@ -335,16 +336,23 @@ void CalibrationWindow::updateStatusInfo()
 	
 	string cameraPointsInfo;
 	string worldPointsInfo;
+	ostringstream calcWorldPointsInfo;
 	for ( vector< pair<Vector3,Vector3> >::iterator i = m_vPoints.begin(); i != m_vPoints.end(); ++i )
 	{
 		cameraPointsInfo +=
 			i->first.x_string() + ", " + i->first.y_string() + ", " + i->first.z_string() + "\n";
 		worldPointsInfo +=
 			i->second.x_string() + ", " + i->second.y_string() + ", " + i->second.z_string() + "\n";
+
+		osg::Matrix calcMatrix = osg::Matrix::translate(i->first.x(), i->first.y(), i->first.z());
+		calcMatrix.postMult(m_mxTransformation);
+		osg::Vec3d calcPoint = calcMatrix.getTrans();
+		float distance = (calcPoint - i->second.toVec3f()).length();
+		calcWorldPointsInfo << calcPoint.x() << ", "  << calcPoint.y() << ", " << calcPoint.z() << " ( " << distance << " )\n";
 	}
 	m_pCameraPoints->setText(cameraPointsInfo.c_str());
 	m_pWorldPoints->setText(worldPointsInfo.c_str());
-
+	m_pCalculatedWorldPoints->setText(calcWorldPointsInfo.str().c_str());
 	
 	osg::Vec3d translation;
     osg::Quat rotation;

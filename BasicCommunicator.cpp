@@ -5,6 +5,9 @@
 
 using namespace RuGKinectInterfaceServer;
 
+#include <iostream>
+using namespace std;
+
 BasicCommunicator::BasicCommunicator()
 : Communicator()
 {

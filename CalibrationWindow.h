@@ -59,6 +59,7 @@ protected:
 	FXLabel				* m_pCoordinates;
 	FXLabel				* m_pCameraPoints;
 	FXLabel				* m_pWorldPoints;
+	FXLabel				* m_pCalculatedWorldPoints;
 	FXLabel				* m_pTransformationDescription;
 	FXLabel				* m_pSaveFeedback;
 

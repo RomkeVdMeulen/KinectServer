@@ -3,6 +3,8 @@
 #include "CalibrationWindow.h"
 #include <osg/ArgumentParser>
 #include <fstream>
+#include <iostream>
+#include <iomanip>
 #include "Skeleton.h"
 
 #ifndef WIN32
@@ -293,6 +295,21 @@ void Server::useCalibrationFile(std::string const &file)
 	m_mxCalibration.set(calibration);
 
 	cout << " * Calibration read from " << file << "\n";
+	
+	/*
+	m_mxCalibration.postMult( osg::Matrix::rotate(0,osg::Vec3f(1,0,0),0.16,osg::Vec3f(0,1,0),-0.05,osg::Vec3f(0,0,1)) );
+	m_mxCalibration.postMultScale( osg::Vec3f( 1, 0.90, 0.95 ) );
+	m_mxCalibration.postMultTranslate( osg::Vec3f(-0.00, 0.02, 0.07) );
+	m_mxCalibration(1,0) = m_mxCalibration(1,0) + 0.1;
+
+	cout << "\n * Adjusted. New calibration matrix:\n";
+	cout
+		<< setw(8) << setprecision(4) << m_mxCalibration(0,0) << setw(8) << setprecision(4) << m_mxCalibration(0,1) << setw(8) << setprecision(4) << m_mxCalibration(0,2) << setw(8) << setprecision(4) << m_mxCalibration(0,3) << "\n"
+		<< setw(8) << setprecision(4) << m_mxCalibration(1,0) << setw(8) << setprecision(4) << m_mxCalibration(1,1) << setw(8) << setprecision(4) << m_mxCalibration(1,2) << setw(8) << setprecision(4) << m_mxCalibration(1,3) << "\n"
+		<< setw(8) << setprecision(4) << m_mxCalibration(2,0) << setw(8) << setprecision(4) << m_mxCalibration(2,1) << setw(8) << setprecision(4) << m_mxCalibration(2,2) << setw(8) << setprecision(4) << m_mxCalibration(2,3) << "\n"
+		<< setw(8) << setprecision(4) << m_mxCalibration(3,0) << setw(8) << setprecision(4) << m_mxCalibration(3,1) << setw(8) << setprecision(4) << m_mxCalibration(3,2) << setw(8) << setprecision(4) << m_mxCalibration(3,3) << "\n"
+		<< "\n\n";
+		*/
 }
 
 #ifdef WIN32

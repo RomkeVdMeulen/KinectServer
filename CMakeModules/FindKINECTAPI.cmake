@@ -4,7 +4,9 @@ FIND_PATH(KINECTAPI_INCLUDE_DIR NuiApi.h
 		/inc/
 	PATHS
 		$ENV{KINECTAPI_DIR}
+		$ENV{KINECTSDK15_DIR}
 		$ENV{KINECTSDK10_DIR}
+		"C:/Program Files/Microsoft SDKs/Kinect/v1.5/"
 		"C:/Program Files/Microsoft SDKs/Kinect/v1.0/"
 )
 
